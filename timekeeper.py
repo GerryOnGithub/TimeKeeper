@@ -12,7 +12,7 @@ BACKUP_YAML_FILE = "tasks_backup.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
 # tasks = {"Away": [], "Scrum": []}
-tasks = { }
+tasks = {"": [] }
 current_task = None
 start_time = None
 flashing = False
@@ -24,20 +24,20 @@ def load_tasks(startup):
         with open(YAML_FILE, 'r') as file:
            tasks = yaml.load(file, Loader=yaml.UnsafeLoader)
 
-        if 'current_task' in tasks:
-            current_task = tasks['current_task']
-            start_time = datetime.strptime(tasks['start_time'], DATE_FORMAT)
-            if startup == False:
-                task_var.set(current_task)
-   else:
-       save_tasks()
+        #if 'current_task' in tasks:
+        #    current_task = tasks['current_task']
+        #    start_time = datetime.strptime(tasks['start_time'], DATE_FORMAT)
+        #    if startup == False:
+        #        task_var.set(current_task)
+   #else:
+   #    save_tasks()
 
 # Save tasks to YAML file
 def save_tasks():
    tasks_to_save = tasks.copy()
-   if current_task:
-       tasks_to_save['current_task'] = current_task
-       tasks_to_save['start_time'] = start_time.strftime(DATE_FORMAT)
+  # if current_task:
+  #     tasks_to_save['current_task'] = current_task
+  #     tasks_to_save['start_time'] = start_time.strftime(DATE_FORMAT)
    with open(YAML_FILE, 'w') as file:
        yaml.dump(tasks_to_save, file)
 
@@ -68,7 +68,8 @@ def stop_task():
     global current_task, start_time
     if current_task and start_time: # and current_task != "Away":
         end_time = datetime.now()
-        duration = (end_time - start_time).total_seconds() / 60  # duration in minutes
+        # duration = (end_time - start_time).total_seconds() / 60  # duration in minutes
+        duration = round((end_time - start_time).total_seconds() / 60)  # Round to nearest minute
         tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
         save_tasks()
     current_task = None
@@ -113,8 +114,8 @@ def edit_yaml():
     def save_changes():
         with open(YAML_FILE, 'w') as file:
             file.write(text_area.get("1.0", tk.END))
-        load_tasks()  # Reload tasks from the edited YAML file
-        task_dropdown['values'] = list(tasks.keys())  # Update dropdown values
+        load_tasks(False)  # Reload tasks from the edited YAML file
+        task_dropdown['values'] = sorted(list(tasks.keys()))
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
@@ -127,10 +128,10 @@ def edit_yaml():
         editor_window.destroy()
 
     save_button = tk.Button(editor_window, text="Save", command=save_changes)
-    save_button.pack(side=tk.LEFT, padx=10)
+    save_button.pack(side=tk.LEFT, padx=3)
 
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
-    cancel_button.pack(side=tk.RIGHT, padx=10)
+    cancel_button.pack(side=tk.RIGHT, padx=3)
 
 def edit_yaml_missing_buttons():
     current = current_task  # Store current task
@@ -183,6 +184,7 @@ def summarize():
     return summary
 
 def export_to_csv():
+    stop_task()
     summary = summarize()
     csv_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if csv_file:
@@ -218,13 +220,23 @@ root.bind('<Map>', disable_maximize)
 # Dropdown for task selection
 task_var = tk.StringVar(value="")
 task_dropdown = ttk.Combobox(root, textvariable=task_var)
-task_dropdown['values'] = list(tasks.keys())
-# task_dropdown.pack(pady=2)
+task_dropdown['values'] = sorted(list(tasks.keys()))
+
+# Dynamically adjust the dropdown width based on the longest value
+# max_width = max(len(task) for task in task_dropdown['values'])
+# task_dropdown.config(width=max_width)
+
 task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True)
+
+# Adjust the height of the dropdown to fit all items without scrolling
+task_dropdown.config(height=len(task_dropdown['values']))
 
 # Function to handle delete key press
 def on_delete_key(event):
     selected_task = task_var.get()
+    if selected_task == "":
+        return
+
     if selected_task and selected_task in tasks:
         stop_task()
         del tasks[selected_task]
@@ -249,13 +261,13 @@ def on_task_selected(event):
 
 def on_task_changed(event):
     selected_task = task_var.get()
-    #if selected_task == "Select Task":
-    #    stop_task()
-    #    return
+    if selected_task == "":
+        save_tasks()
 
     if selected_task not in tasks:
         tasks[selected_task] = []
-        task_dropdown['values'] = list(tasks.keys())
+        #task_dropdown['values'] = sorted(list(tasks.keys()))
+        task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
         save_tasks()
 
     start_task(selected_task)
@@ -272,7 +284,8 @@ def on_lost_focus(event):
 
     if selected_task not in tasks:
         tasks[selected_task] = []
-        task_dropdown['values'] = list(tasks.keys())
+        #task_dropdown['values'] = list(tasks.keys())
+        task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
         save_tasks()
         start_task(selected_task)
 
@@ -287,19 +300,20 @@ task_dropdown.bind("<Return>", on_task_changed)
 task_dropdown.bind("<FocusOut>", on_lost_focus)
 
 # Running time display
-running_time = tk.StringVar(value="00:00")
+running_time = tk.StringVar(value="00:00:00")
 running_time_label = tk.Label(root, textvariable=running_time, font=("Helvetica", 12))
 running_time_label.pack(pady=3)
 
 # Buttons for editing YAML and exporting to CSV
-# TODO edit_button = tk.Button(root, text="Edit Tasks", command=edit_yaml)
-# TODO edit_button.pack(side=tk.LEFT, padx=10, pady=3)
+edit_button = tk.Button(root, text="Edit Tasks", command=edit_yaml)
+edit_button.pack(side=tk.LEFT, padx=10, pady=3)
 
 export_button = tk.Button(root, text="Export to CSV", command=export_to_csv)
-export_button.pack(side=tk.RIGHT, padx=10, pady=3)
+export_button.pack(side=tk.RIGHT, padx=3, pady=3)
 
 # Load initial tasks and start the main loop
 load_tasks(True)
-task_dropdown['values'] = list(tasks.keys())
+# task_dropdown['values'] = list(tasks.keys())
+task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
