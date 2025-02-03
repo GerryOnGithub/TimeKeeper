@@ -137,33 +137,8 @@ def edit_yaml():
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
-def edit_yaml_missing_buttons():
-    current = current_task  # Store current task
-    stop_task() # TODO is this necessary? should let the user control if a task is stopped by changing the selection
-    backup_tasks()
-    editor_window = tk.Toplevel(root)
-    editor_window.title("Edit Tasks")
-
-    text_area = tk.Text(editor_window)
-    text_area.pack(expand=True, fill=tk.BOTH)
-
-    with open(YAML_FILE, 'r') as file:
-        text_area.insert(tk.END, file.read())
-
-    def save_changes():
-        with open(YAML_FILE, 'w') as file:
-            file.write(text_area.get("1.0", tk.END))
-        load_tasks(False)
-        if current:  # Restart previous task
-            task_var.set(current)
-            start_task(current)
-        editor_window.destroy()
-
-    def cancel_changes():
-        if current:  # Restart previous task
-            task_var.set(current)
-            start_task(current)
-        editor_window.destroy()
+def endofday():
+    print(f"not implemented");
 
 # Initialize a dictionary to store summarized data
 summary = defaultdict(lambda: defaultdict(float))
@@ -302,12 +277,18 @@ running_time = tk.StringVar(value="00:00:00")
 running_time_label = tk.Label(root, textvariable=running_time, font=("Helvetica", 12))
 running_time_label.pack(pady=3)
 
-# Buttons for editing YAML and exporting to CSV
+button_frame = tk.Frame(root)
+button_frame.pack(side=tk.BOTTOM, pady=10)
+
 edit_button = tk.Button(root, text="Edit Tasks", command=edit_yaml)
 edit_button.pack(side=tk.LEFT, padx=10, pady=3)
 
+#eod_button = tk.Button(root, text="EoD", command=endofday)
+#eod_button.pack(side=tk.CENTER, padx=10, pady=3)
+
 export_button = tk.Button(root, text="Export to CSV", command=export_to_csv)
 export_button.pack(side=tk.RIGHT, padx=3, pady=3)
+
 
 # Load initial tasks and start the main loop
 load_tasks(True)
