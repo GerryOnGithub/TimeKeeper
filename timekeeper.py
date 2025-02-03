@@ -138,7 +138,9 @@ def edit_yaml():
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
 def endofday():
-    print(f"not implemented");
+    stop_task()
+    task_var.set('')
+    save_tasks()
 
 # Initialize a dictionary to store summarized data
 summary = defaultdict(lambda: defaultdict(float))
@@ -189,7 +191,7 @@ def export_to_csv():
 # Create main window
 root = tk.Tk()
 root.title("TK")
-root.geometry("200x90")
+root.geometry("220x95")
 root.attributes("-topmost", True)
 root.configure(bg="#AAAADE") # rgb
 
@@ -275,20 +277,22 @@ task_dropdown.bind("<FocusOut>", on_lost_focus)
 # Running time display
 running_time = tk.StringVar(value="00:00:00")
 running_time_label = tk.Label(root, textvariable=running_time, font=("Helvetica", 12))
-running_time_label.pack(pady=3)
+running_time_label.pack(pady=0)
 
-button_frame = tk.Frame(root)
-button_frame.pack(side=tk.BOTTOM, pady=10)
+#button_frame = tk.Frame(root)
+#button_frame.pack(side=tk.BOTTOM, pady=10)
 
-edit_button = tk.Button(root, text="Edit Tasks", command=edit_yaml)
-edit_button.pack(side=tk.LEFT, padx=10, pady=3)
+button_frame = tk.Frame(root, bg=root.cget("bg"), highlightthickness=0, borderwidth=0)
+button_frame.pack(side=tk.BOTTOM, pady=4)
 
-#eod_button = tk.Button(root, text="EoD", command=endofday)
-#eod_button.pack(side=tk.CENTER, padx=10, pady=3)
+edit_button = tk.Button(button_frame, text="Edit Tasks", command=edit_yaml)
+edit_button.pack(side=tk.LEFT, padx=6, pady=3)
 
-export_button = tk.Button(root, text="Export to CSV", command=export_to_csv)
-export_button.pack(side=tk.RIGHT, padx=3, pady=3)
+eod_button = tk.Button(button_frame, text="EoD", command=endofday)
+eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
+export_button = tk.Button(button_frame, text="Export CSV", command=export_to_csv)
+export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
 # Load initial tasks and start the main loop
 load_tasks(True)
