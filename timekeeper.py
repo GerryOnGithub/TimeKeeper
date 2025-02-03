@@ -11,18 +11,18 @@ YAML_FILE = "tasks.yaml"
 BACKUP_YAML_FILE = "tasks_backup.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
-# tasks = {"Away": [], "Scrum": []}
-tasks = {"": [] }
+# _tasks = {"Away": [], "Scrum": []}
+_tasks = {"": [] } # was 'tasks' but that is too hard to search for...
 current_task = None
 start_time = None
 flashing = False
 
 # Load tasks from YAML file
 def load_tasks(startup):
-   global tasks, current_task, start_time
+   global _tasks, current_task, start_time
    if os.path.exists(YAML_FILE):
         with open(YAML_FILE, 'r') as file:
-           tasks = yaml.load(file, Loader=yaml.UnsafeLoader)
+           _tasks = yaml.load(file, Loader=yaml.UnsafeLoader)
 
         #if 'current_task' in tasks:
         #    current_task = tasks['current_task']
@@ -34,7 +34,7 @@ def load_tasks(startup):
 
 # Save tasks to YAML file
 def save_tasks():
-   tasks_to_save = tasks.copy()
+   tasks_to_save = _tasks.copy()
   # if current_task:
   #     tasks_to_save['current_task'] = current_task
   #     tasks_to_save['start_time'] = start_time.strftime(DATE_FORMAT)
@@ -44,7 +44,7 @@ def save_tasks():
 # Backup tasks to backup YAML file
 def backup_tasks():
     with open(BACKUP_YAML_FILE, 'w') as file:
-        yaml.dump(tasks, file)
+        yaml.dump(_tasks, file)
 
 def on_closing():
     stop_task()
@@ -70,7 +70,7 @@ def stop_task():
         end_time = datetime.now()
         # duration = (end_time - start_time).total_seconds() / 60  # duration in minutes
         duration = round((end_time - start_time).total_seconds() / 60)  # Round to nearest minute
-        tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
+        _tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
         save_tasks()
     current_task = None
     start_time = None
@@ -115,7 +115,7 @@ def edit_yaml():
         with open(YAML_FILE, 'w') as file:
             file.write(text_area.get("1.0", tk.END))
         load_tasks(False)  # Reload tasks from the edited YAML file
-        task_dropdown['values'] = sorted(list(tasks.keys()))
+        task_dropdown['values'] = sorted(list(_tasks.keys()))
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
@@ -128,10 +128,10 @@ def edit_yaml():
         editor_window.destroy()
 
     save_button = tk.Button(editor_window, text="Save", command=save_changes)
-    save_button.pack(side=tk.LEFT, padx=3)
+    save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
-    cancel_button.pack(side=tk.RIGHT, padx=3)
+    cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
 def edit_yaml_missing_buttons():
     current = current_task  # Store current task
@@ -168,7 +168,7 @@ def summarize():
     summary = defaultdict(lambda: defaultdict(int))
 
     # Iterate over each task and its entries in the data dictionary
-    for task, entries in tasks.items():
+    for task, entries in _tasks.items():
         if task in ['start_time', 'current_task']:
             continue
 
@@ -183,6 +183,7 @@ def summarize():
 
     return summary
 
+# TODO if minutes are 0 write empty string
 def export_to_csv():
     stop_task()
     summary = summarize()
@@ -209,8 +210,9 @@ def export_to_csv():
 # Create main window
 root = tk.Tk()
 root.title("TK")
-root.geometry("200x110")
+root.geometry("200x90")
 root.attributes("-topmost", True)
+root.configure(bg="#AAAADE") # rgb
 
 def disable_maximize(event=None):
     root.state('normal')
@@ -220,16 +222,8 @@ root.bind('<Map>', disable_maximize)
 # Dropdown for task selection
 task_var = tk.StringVar(value="")
 task_dropdown = ttk.Combobox(root, textvariable=task_var)
-task_dropdown['values'] = sorted(list(tasks.keys()))
-
-# Dynamically adjust the dropdown width based on the longest value
-# max_width = max(len(task) for task in task_dropdown['values'])
-# task_dropdown.config(width=max_width)
-
-task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True)
-
-# Adjust the height of the dropdown to fit all items without scrolling
-task_dropdown.config(height=len(task_dropdown['values']))
+task_dropdown['values'] = sorted(list(_tasks.keys()))
+task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
 
 # Function to handle delete key press
 def on_delete_key(event):
@@ -237,10 +231,10 @@ def on_delete_key(event):
     if selected_task == "":
         return
 
-    if selected_task and selected_task in tasks:
+    if selected_task and selected_task in _tasks:
         stop_task()
-        del tasks[selected_task]
-        task_dropdown['values'] = list(tasks.keys())
+        del _tasks[selected_task]
+        task_dropdown['values'] = list(_tasks.keys())
         task_var.set("")  # Set to empty value after deletion
         print(f"Deleted task: {selected_task}")
         save_tasks()
@@ -264,10 +258,10 @@ def on_task_changed(event):
     if selected_task == "":
         save_tasks()
 
-    if selected_task not in tasks:
-        tasks[selected_task] = []
-        #task_dropdown['values'] = sorted(list(tasks.keys()))
-        task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
+    if selected_task not in _tasks:
+        _tasks[selected_task] = []
+        #task_dropdown['values'] = sorted(list(_tasks.keys()))
+        task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
         save_tasks()
 
     start_task(selected_task)
@@ -282,10 +276,10 @@ def on_lost_focus(event):
 #        stop_task()
 #        return
 
-    if selected_task not in tasks:
-        tasks[selected_task] = []
-        #task_dropdown['values'] = list(tasks.keys())
-        task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
+    if selected_task not in _tasks:
+        _tasks[selected_task] = []
+        #task_dropdown['values'] = list(_tasks.keys())
+        task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
         save_tasks()
         start_task(selected_task)
 
@@ -313,7 +307,7 @@ export_button.pack(side=tk.RIGHT, padx=3, pady=3)
 
 # Load initial tasks and start the main loop
 load_tasks(True)
-# task_dropdown['values'] = list(tasks.keys())
-task_dropdown['values'] = sorted(list(tasks.keys()), key=str.lower)
+# task_dropdown['values'] = list(_tasks.keys())
+task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
