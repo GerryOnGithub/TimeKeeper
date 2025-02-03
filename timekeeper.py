@@ -1,4 +1,8 @@
-# pip install pyyaml
+# windows
+#   pip install pyyaml
+# linux
+#   sudo apt-get install python-yaml
+#   sudo apt-get install python3-tk
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import yaml
