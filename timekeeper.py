@@ -20,7 +20,6 @@ DATE_FORMAT = "%Y-%m-%d %H:%M"
 _tasks = {"": [] }
 current_task = None
 start_time = None
-# flashing = False
 
 # Load tasks from YAML file
 def load_tasks(startup):
@@ -28,14 +27,6 @@ def load_tasks(startup):
    if os.path.exists(YAML_FILE):
         with open(YAML_FILE, 'r') as file:
            _tasks = yaml.load(file, Loader=yaml.UnsafeLoader)
-
-        #if 'current_task' in tasks:
-        #    current_task = tasks['current_task']
-        #    start_time = datetime.strptime(tasks['start_time'], DATE_FORMAT)
-        #    if startup == False:
-        #        task_var.set(current_task)
-   #else:
-   #    save_tasks()
 
 # Save tasks to YAML file
 def save_tasks():
@@ -71,7 +62,7 @@ def start_task(task):
 # Stop recording time for the current task
 def stop_task():
     global current_task, start_time
-    if current_task and start_time: # and current_task != "Away":
+    if current_task and start_time and current_task != "":
         end_time = datetime.now()
         # duration = (end_time - start_time).total_seconds() / 60  # duration in minutes
         duration = round((end_time - start_time).total_seconds() / 60)  # Round to nearest minute
@@ -110,12 +101,13 @@ def edit_yaml():
     stop_task()  # Stop the current task if running
     backup_tasks()  # Backup current tasks
 
-    root = tk.Tk()
-    frame = tk.Frame(root)
+    editor_window = tk.Toplevel()
+    editor_window.title("Edit Tasks")
+
+    frame = tk.Frame(editor_window)
     frame.pack(expand=True, fill=tk.BOTH)
 
-    editor_window = tk.Toplevel(frame)
-    editor_window.title("Edit Tasks")
+    
 
     text_area = tk.Text(frame, wrap=tk.WORD)
     text_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
@@ -148,25 +140,6 @@ def edit_yaml():
 
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
-
-
-def edit_yaml_test():
-    root = tk.Tk()
-    root.title("Text Widget with Scrollbar")
-
-    frame = tk.Frame(root)
-    frame.pack(expand=True, fill=tk.BOTH)
-
-    text_area = tk.Text(frame, wrap=tk.WORD)
-    text_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
-
-    scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
-    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-    text_area.config(yscrollcommand=scrollbar.set)
-
-    sample_text = "\n".join([f"Line {i}" for i in range(0, 101)]) # 100 lines of text
-    text_area.insert(tk.END, sample_text)
 
 def endofday():
     stop_task()
