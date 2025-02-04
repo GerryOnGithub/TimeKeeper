@@ -1,14 +1,15 @@
-# windows
+# installation
+# Windows
 #   pip install pyyaml
-# linux
+# Linux
 #   sudo apt-get install python-yaml
 #   sudo apt-get install python3-tk
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
+from   tkinter import ttk, messagebox, filedialog
 import yaml
 import csv
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 from collections import defaultdict
 
 YAML_FILE = "tasks.yaml"
@@ -16,10 +17,10 @@ BACKUP_YAML_FILE = "tasks_backup.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
 # _tasks = {"Away": [], "Scrum": []}
-_tasks = {"": [] } # was 'tasks' but that is too hard to search for...
+_tasks = {"": [] }
 current_task = None
 start_time = None
-flashing = False
+# flashing = False
 
 # Load tasks from YAML file
 def load_tasks(startup):
@@ -88,18 +89,18 @@ def update_running_time():
         running_time.set("00:00:00")
     root.after(1000, update_running_time)
 
-def flash_away():
-    global flashing
-    if task_var.get() == "Away":
-        if flashing:
-            running_time_label.config(background="red")
-        else:
-            running_time_label.config(background="white")
-        flashing = not flashing
-        root.after(500, flash_away)
-    else:
-        running_time_label.config(background="white")
-        flashing = False
+# def flash_away():
+#     global flashing
+#    if task_var.get() == "Away":
+#        if flashing:
+#            running_time_label.config(background="red")
+#        else:
+#            running_time_label.config(background="white")
+#        flashing = not flashing
+#        root.after(500, flash_away)
+#    else:
+#        running_time_label.config(background="white")
+#        flashing = False
 
 def edit_yaml():
     if not os.path.exists(YAML_FILE):
@@ -109,14 +110,22 @@ def edit_yaml():
     stop_task()  # Stop the current task if running
     backup_tasks()  # Backup current tasks
 
-    editor_window = tk.Toplevel(root)
+    root = tk.Tk()
+    frame = tk.Frame(root)
+    frame.pack(expand=True, fill=tk.BOTH)
+
+    editor_window = tk.Toplevel(frame)
     editor_window.title("Edit Tasks")
 
-    text_area = tk.Text(editor_window)
-    text_area.pack(expand=True, fill=tk.BOTH)
-
+    text_area = tk.Text(frame, wrap=tk.WORD)
+    text_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
     with open(YAML_FILE, 'r') as file:
         text_area.insert(tk.END, file.read())
+
+    scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    text_area.config(yscrollcommand=scrollbar.set)
 
     def save_changes():
         with open(YAML_FILE, 'w') as file:
@@ -139,6 +148,25 @@ def edit_yaml():
 
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
+
+
+def edit_yaml_test():
+    root = tk.Tk()
+    root.title("Text Widget with Scrollbar")
+
+    frame = tk.Frame(root)
+    frame.pack(expand=True, fill=tk.BOTH)
+
+    text_area = tk.Text(frame, wrap=tk.WORD)
+    text_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
+
+    scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    text_area.config(yscrollcommand=scrollbar.set)
+
+    sample_text = "\n".join([f"Line {i}" for i in range(0, 101)]) # 100 lines of text
+    text_area.insert(tk.END, sample_text)
 
 def endofday():
     stop_task()
@@ -191,24 +219,6 @@ def export_to_csv():
 
         os.startfile(csv_file)
 
-# Create main window
-root = tk.Tk()
-root.title("TK")
-root.geometry("220x95")
-root.attributes("-topmost", True)
-root.configure(bg="#AAAADE") # rgb
-
-def disable_maximize(event=None):
-    root.state('normal')
-
-root.bind('<Map>', disable_maximize)
-
-# Dropdown for task selection
-task_var = tk.StringVar(value="")
-task_dropdown = ttk.Combobox(root, textvariable=task_var)
-task_dropdown['values'] = sorted(list(_tasks.keys()))
-task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
-
 # Function to handle delete key press
 def on_delete_key(event):
     selected_task = task_var.get()
@@ -222,8 +232,6 @@ def on_delete_key(event):
         task_var.set("")  # Set to empty value after deletion
         print(f"Deleted task: {selected_task}")
         save_tasks()
-
-task_dropdown.bind("<Delete>", on_delete_key)
 
 def on_task_selected(event):
     selected_task = task_var.get()
@@ -283,17 +291,36 @@ def on_lost_focus(event):
 #    else:
 #        task_dropdown.config(foreground="black")
 
+# Create main window
+root = tk.Tk()
+root.title("TK")
+root.geometry("220x95")
+root.attributes("-topmost", True)
+root.configure(bg="#AAAADE") # rgb
+
+def disable_maximize(event=None):
+    root.state('normal')
+
+root.bind('<Map>', disable_maximize)
+
+# Dropdown for task selection
+task_var = tk.StringVar(value="")
+task_dropdown = ttk.Combobox(root, textvariable=task_var)
+task_dropdown['values'] = sorted(list(_tasks.keys()))
+task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
+
 task_dropdown.bind("<<ComboboxSelected>>", on_task_selected)
 task_dropdown.bind("<Return>", on_task_changed)
 task_dropdown.bind("<FocusOut>", on_lost_focus)
+task_dropdown.bind("<Delete>", on_delete_key)
 
 # Running time display
 running_time = tk.StringVar(value="00:00:00")
 running_time_label = tk.Label(root, textvariable=running_time, font=("Helvetica", 12))
 running_time_label.pack(pady=0)
 
-#button_frame = tk.Frame(root)
-#button_frame.pack(side=tk.BOTTOM, pady=10)
+# button_frame = tk.Frame(root)
+# button_frame.pack(side=tk.BOTTOM, pady=10)
 
 button_frame = tk.Frame(root, bg=root.cget("bg"), highlightthickness=0, borderwidth=0)
 button_frame.pack(side=tk.BOTTOM, pady=4)
