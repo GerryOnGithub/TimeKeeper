@@ -102,6 +102,9 @@ def flash_away():
         flashing = False
 
 def edit_yaml():
+    if not os.path.exists(YAML_FILE):
+        return
+
     current = current_task  # Store current task
     stop_task()  # Stop the current task if running
     backup_tasks()  # Backup current tasks
@@ -251,6 +254,16 @@ def on_task_changed(event):
 #    else:
 #        task_dropdown.config(foreground="black")
 
+def reset():
+    response = messagebox.askyesno("Confirm Reset", "Are you sure you wish to reset all tasks to zero?")
+    if response:
+        stop_task()
+        backup_tasks()
+        for key in _tasks:
+            _tasks[key].clear()
+        task_dropdown['values'] = sorted(list(_tasks.keys()))
+        save_tasks()
+
 def on_lost_focus(event):
     selected_task = task_var.get()
 #    if selected_task == "Select Task":
@@ -285,18 +298,20 @@ running_time_label.pack(pady=0)
 button_frame = tk.Frame(root, bg=root.cget("bg"), highlightthickness=0, borderwidth=0)
 button_frame.pack(side=tk.BOTTOM, pady=4)
 
-edit_button = tk.Button(button_frame, text="Edit Tasks", command=edit_yaml)
+edit_button = tk.Button(button_frame, text="Edit", command=edit_yaml)
 edit_button.pack(side=tk.LEFT, padx=6, pady=3)
+
+reset_button = tk.Button(button_frame, text="Reset", command=reset)
+reset_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
 eod_button = tk.Button(button_frame, text="EoD", command=endofday)
 eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
-export_button = tk.Button(button_frame, text="Export CSV", command=export_to_csv)
+export_button = tk.Button(button_frame, text="Export", command=export_to_csv)
 export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
 # Load initial tasks and start the main loop
 load_tasks(True)
-# task_dropdown['values'] = list(_tasks.keys())
 task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
 root.protocol("WM_DELETE_WINDOW", on_closing)
 root.mainloop()
