@@ -16,10 +16,23 @@ YAML_FILE = "tasks.yaml"
 BACKUP_YAML_FILE = "tasks_backup.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
-# _tasks = {"Away": [], "Scrum": []}
 _tasks = {"": [] }
 current_task = None
 start_time = None
+
+# Example of _tasks
+# {
+#     "coding": [
+#         ["2024-02-05", 120],
+#         ["2024-02-06", 90]
+#     ],
+#     "reading": [
+#         ["2024-02-05", 45],
+#         ["2024-02-06", 60]
+#     ],
+#     "start_time": "2024-02-05T08:00:00",
+#     "current_task": "coding"
+# }
 
 # Load tasks from YAML file
 def load_tasks(startup):
@@ -101,13 +114,11 @@ def edit_yaml():
     stop_task()  # Stop the current task if running
     backup_tasks()  # Backup current tasks
 
-    editor_window = tk.Toplevel()
+    editor_window = tk.Toplevel()  # Use Toplevel, no new Tk()
     editor_window.title("Edit Tasks")
 
-    frame = tk.Frame(editor_window)
+    frame = tk.Frame(editor_window)  # Attach frame to the editor window
     frame.pack(expand=True, fill=tk.BOTH)
-
-    
 
     text_area = tk.Text(frame, wrap=tk.WORD)
     text_area.pack(side=tk.LEFT, expand=True, fill=tk.BOTH)
@@ -116,7 +127,6 @@ def edit_yaml():
 
     scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL, command=text_area.yview)
     scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
     text_area.config(yscrollcommand=scrollbar.set)
 
     def save_changes():
@@ -127,13 +137,13 @@ def edit_yaml():
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
-        editor_window.destroy()
+        editor_window.destroy()  # Close only the edit window
 
     def cancel_changes():
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
-        editor_window.destroy()
+        editor_window.destroy()  # Close only the edit window
 
     save_button = tk.Button(editor_window, text="Save", command=save_changes)
     save_button.pack(side=tk.LEFT, padx=5, pady=5)
@@ -168,7 +178,6 @@ def summarize():
 
     return summary
 
-# TODO if minutes are 0 write empty string
 def export_to_csv():
     stop_task()
     summary = summarize()
@@ -177,18 +186,28 @@ def export_to_csv():
         # Extract all unique dates and tasks
         dates = sorted(summary.keys())
         tasks = sorted({task for tasks in summary.values() for task in tasks})
-
         with open(csv_file, 'w', newline='') as file:
             writer = csv.writer(file)
-            # Write the header row
-            writer.writerow(["Task"] + dates)
-
+            writer.writerow(["Task"] + dates) # Write the header row
             # Write the data rows
             for task in tasks:
                 row = [task]
                 for date in dates:
-                    row.append(summary.get(date, {}).get(task, 0))
+                    # Convert minutes to hours, round to 1 decimal place
+                    # If minutes are 0, write an empty string
+                    duration = summary.get(date, {}).get(task, 0)
+                    row.append(f"{duration/60:.1f}" if duration > 0 else "")
                 writer.writerow(row)
+
+            # Add total row
+            total_row = ["Total"]
+            for date in dates:
+                daily_total = sum(summary.get(date, {}).get(task, 0) for task in tasks)
+                total_row.append(f"{daily_total/60:.1f}" if daily_total > 0 else "")
+            writer.writerow(total_row)
+
+            # for .xlsx
+            # total_row = ["Total"] + [f"=SUM(B{len(tasks)+2}:B{len(tasks)+1+dates_count})" for dates_count in range(len(dates))]
 
         os.startfile(csv_file)
 
@@ -203,7 +222,6 @@ def on_delete_key(event):
         del _tasks[selected_task]
         task_dropdown['values'] = list(_tasks.keys())
         task_var.set("")  # Set to empty value after deletion
-        print(f"Deleted task: {selected_task}")
         save_tasks()
 
 def on_task_selected(event):
@@ -213,10 +231,6 @@ def on_task_selected(event):
     #    return
 
     start_task(selected_task)
-#    if selected_task == "Away":
-#        flash_away()
-#    else:
-#        task_dropdown.config(foreground="black")
 
 def on_task_changed(event):
     selected_task = task_var.get()
@@ -225,15 +239,10 @@ def on_task_changed(event):
 
     if selected_task not in _tasks:
         _tasks[selected_task] = []
-        #task_dropdown['values'] = sorted(list(_tasks.keys()))
         task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
         save_tasks()
 
     start_task(selected_task)
-#    if selected_task == "Away":
-#        flash_away()
-#    else:
-#        task_dropdown.config(foreground="black")
 
 def reset():
     response = messagebox.askyesno("Confirm Reset", "Are you sure you wish to reset all tasks to zero?")
@@ -276,11 +285,20 @@ def disable_maximize(event=None):
 
 root.bind('<Map>', disable_maximize)
 
+load_tasks(True)
+
 # Dropdown for task selection
 task_var = tk.StringVar(value="")
 task_dropdown = ttk.Combobox(root, textvariable=task_var)
 task_dropdown['values'] = sorted(list(_tasks.keys()))
 task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
+
+# fail task_dropdown['height'] = len(task_dropdown['values'])
+# fail task_dropdown.configure(height=len(task_dropdown['values']))
+# fail task_dropdown.config(height=len(task_dropdown['values']))
+
+# used to work, now breaks
+task_dropdown.config(height=len(task_dropdown['values']))
 
 task_dropdown.bind("<<ComboboxSelected>>", on_task_selected)
 task_dropdown.bind("<Return>", on_task_changed)
@@ -310,8 +328,9 @@ eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the sa
 export_button = tk.Button(button_frame, text="Export", command=export_to_csv)
 export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
-# Load initial tasks and start the main loop
-load_tasks(True)
 task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
+
 root.protocol("WM_DELETE_WINDOW", on_closing)
+
+print(f"running...")
 root.mainloop()
