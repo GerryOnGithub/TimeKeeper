@@ -1,14 +1,18 @@
-# installation
-# Windows
-#   pip install pyyaml
-# Linux
-#   sudo apt-get install python-yaml
-#   sudo apt-get install python3-tk
+"""
+installation
+ Windows
+   pip install pyyaml
+   pip install openpyxl pandas
+ Linux
+   sudo apt-get install python-yaml
+   sudo apt-get install python3-tk
+"""
 import tkinter as tk
 from   tkinter import ttk, messagebox, filedialog
 import yaml
 import csv
 import os
+import pandas as pd
 from datetime import datetime
 from collections import defaultdict
 
@@ -20,19 +24,21 @@ _tasks = {"": [] }
 current_task = None
 start_time = None
 
-# Example of _tasks
-# {
-#     "coding": [
-#         ["2024-02-05", 120],
-#         ["2024-02-06", 90]
-#     ],
-#     "reading": [
-#         ["2024-02-05", 45],
-#         ["2024-02-06", 60]
-#     ],
-#     "start_time": "2024-02-05T08:00:00",
-#     "current_task": "coding"
-# }
+"""
+Example of _tasks
+{
+    "coding": [
+        ["2024-02-05", 120],
+        ["2024-02-06", 90]
+    ],
+    "reading": [
+        ["2024-02-05", 45],
+        ["2024-02-06", 60]
+    ],
+    "start_time": "2024-02-05T08:00:00",
+    "current_task": "coding"
+}
+"""
 
 # Load tasks from YAML file
 def load_tasks(startup):
@@ -178,9 +184,78 @@ def summarize():
 
     return summary
 
+def summarize_to_dataframe_values_good_structure_wrong(summary):
+    # Convert the nested defaultdict to a list of dictionaries
+    data = []
+    for date, tasks in summary.items():
+        row = {"date": date}
+        row.update(tasks)  # Add task durations as columns
+        data.append(row)
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Fill missing task columns with 0 (in case not all tasks are present every day)
+    df.fillna(0, inplace=True)
+
+    return df
+
+def summarize_to_dataframe(summary):
+    data = []
+
+    for task, entries in summary.items():
+        #if not isinstance(entries, list):
+        #    continue  # Skip non-list entries (e.g., metadata like 'start_time')
+
+        for entry in entries:
+            if isinstance(entry, list) and len(entry) == 2:
+                date, duration = entry
+
+                # if isinstance(date, str) and isinstance(duration, (int, float)):  # Validate types
+                data.append({"task": task, "date": date, "duration": duration})
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Pivot to make tasks rows and dates columns
+    df = df.pivot(index="task", columns="date", values="duration")
+
+    # Fill missing values with 0
+    df.fillna(0, inplace=True)
+
+    return df
+
+def summarize_to_dataframe_ugly(summary):
+    data = []
+
+    for task, entries in summary.items():
+        # Ensure task data is a list of [date, duration] pairs
+        if not isinstance(entries, list):
+            continue  # Skip non-list entries (e.g., metadata like 'start_time')
+
+        for entry in entries:
+            if isinstance(entry, list) and len(entry) == 2:
+                date, duration = entry
+                if isinstance(date, str) and isinstance(duration, (int, float)):  # Validate types
+                    data.append({"task": task, "date": date, "duration": duration})
+
+    # Create DataFrame
+    df = pd.DataFrame(data)
+
+    # Pivot to make tasks rows and dates columns
+    df = df.pivot(index="task", columns="date", values="duration")
+
+    # Fill missing values with 0
+    df.fillna(0, inplace=True)
+
+    return df
+
 def export_to_csv():
     stop_task()
     summary = summarize()
+#    dataframe = summarize_to_dataframe(summary);
+
+    data = []
     csv_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
     if csv_file:
         # Extract all unique dates and tasks
@@ -189,6 +264,7 @@ def export_to_csv():
         with open(csv_file, 'w', newline='') as file:
             writer = csv.writer(file)
             writer.writerow(["Task"] + dates) # Write the header row
+            data.append(["Task"] + dates) # Write the header row
             # Write the data rows
             for task in tasks:
                 row = [task]
@@ -198,6 +274,7 @@ def export_to_csv():
                     duration = summary.get(date, {}).get(task, 0)
                     row.append(f"{duration/60:.1f}" if duration > 0 else "")
                 writer.writerow(row)
+                data.append(row)
 
             # Add total row
             total_row = ["Total"]
@@ -205,9 +282,14 @@ def export_to_csv():
                 daily_total = sum(summary.get(date, {}).get(task, 0) for task in tasks)
                 total_row.append(f"{daily_total/60:.1f}" if daily_total > 0 else "")
             writer.writerow(total_row)
+            data.append(total_row)
 
             # for .xlsx
             # total_row = ["Total"] + [f"=SUM(B{len(tasks)+2}:B{len(tasks)+1+dates_count})" for dates_count in range(len(dates))]
+
+        dataframe = pd.DataFrame(data)
+        with pd.ExcelWriter("./test.xlsx", engine='openpyxl') as writer:
+            dataframe.to_excel(writer, index=False)
 
         os.startfile(csv_file)
 
@@ -224,25 +306,69 @@ def on_delete_key(event):
         task_var.set("")  # Set to empty value after deletion
         save_tasks()
 
+    resize_dropdown()
+
 def on_task_selected(event):
+    # print(f"task selected")
     selected_task = task_var.get()
+    if selected_task == current_task:
+        return;
+    if selected_task != current_task:
+        on_task_changed(event)
     #if selected_task == "Select Task":
     #    stop_task()
     #    return
-
-    start_task(selected_task)
+    # start_task(selected_task)
 
 def on_task_changed(event):
+    # print(f"task changed")
     selected_task = task_var.get()
-    if selected_task == "":
-        save_tasks()
+    if selected_task == current_task:
+        return;
 
     if selected_task not in _tasks:
         _tasks[selected_task] = []
-        task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
-        save_tasks()
+        save_tasks()  # Save immediately
+        # load_tasks(False)  # Reload tasks from file (ensures consistency)
+
+        # Explicitly update dropdown values
+        # task_dropdown['values'] = sorted(list(_tasks.keys()))
+        sort_tasks()
+        task_var.set(selected_task)  # necessary?
+        resize_dropdown()
 
     start_task(selected_task)
+    print(f"start task: {selected_task}")
+
+def on_lost_focus(event):
+    # print(f"lost focus")
+    selected_task = task_var.get()
+    if selected_task == current_task:
+        return;
+
+    if selected_task not in _tasks:
+        _tasks[selected_task] = []
+        #task_dropdown['values'] = list(_tasks.keys())
+        #task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
+        sort_tasks()
+        save_tasks()
+        start_task(selected_task)
+
+def on_task_changed_old(event):
+    print(f"task changed")
+    selected_task = task_var.get()
+    if selected_task not in _tasks:
+        _tasks[selected_task] = []
+        save_tasks()
+        load_tasks()
+        sort_tasks()
+        resize_dropdown()
+
+    start_task(selected_task)
+    print(f"start task: {selected_task}")
+
+def sort_tasks():
+    task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
 
 def reset():
     response = messagebox.askyesno("Confirm Reset", "Are you sure you wish to reset all tasks to zero?")
@@ -251,27 +377,8 @@ def reset():
         backup_tasks()
         for key in _tasks:
             _tasks[key].clear()
-        task_dropdown['values'] = sorted(list(_tasks.keys()))
+        sort_tasks()
         save_tasks()
-
-def on_lost_focus(event):
-    selected_task = task_var.get()
-#    if selected_task == "Select Task":
-#        stop_task()
-#        return
-
-    if selected_task not in _tasks:
-        _tasks[selected_task] = []
-        #task_dropdown['values'] = list(_tasks.keys())
-        task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
-        save_tasks()
-        start_task(selected_task)
-
-#    start_task(selected_task)
-#    if selected_task == "Away":
-#        flash_away()
-#    else:
-#        task_dropdown.config(foreground="black")
 
 # Create main window
 root = tk.Tk()
@@ -283,6 +390,9 @@ root.configure(bg="#AAAADE") # rgb
 def disable_maximize(event=None):
     root.state('normal')
 
+def resize_dropdown():
+    task_dropdown.config(height=len(task_dropdown['values']))
+
 root.bind('<Map>', disable_maximize)
 
 load_tasks(True)
@@ -293,12 +403,9 @@ task_dropdown = ttk.Combobox(root, textvariable=task_var)
 task_dropdown['values'] = sorted(list(_tasks.keys()))
 task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
 
-# fail task_dropdown['height'] = len(task_dropdown['values'])
-# fail task_dropdown.configure(height=len(task_dropdown['values']))
-# fail task_dropdown.config(height=len(task_dropdown['values']))
-
-# used to work, now breaks
-task_dropdown.config(height=len(task_dropdown['values']))
+# task_dropdown.config(height=len(task_dropdown['values']))
+resize_dropdown()
+sort_tasks()
 
 task_dropdown.bind("<<ComboboxSelected>>", on_task_selected)
 task_dropdown.bind("<Return>", on_task_changed)
