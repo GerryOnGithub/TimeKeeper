@@ -202,32 +202,19 @@ def summarize_to_dataframe_values_good_structure_wrong(summary):
 
 def summarize_to_dataframe(summary):
     data = []
-
     for task, entries in summary.items():
-        #if not isinstance(entries, list):
-        #    continue  # Skip non-list entries (e.g., metadata like 'start_time')
-
         for entry in entries:
             if isinstance(entry, list) and len(entry) == 2:
                 date, duration = entry
-
-                # if isinstance(date, str) and isinstance(duration, (int, float)):  # Validate types
                 data.append({"task": task, "date": date, "duration": duration})
-
-    # Create DataFrame
     df = pd.DataFrame(data)
-
-    # Pivot to make tasks rows and dates columns
     df = df.pivot(index="task", columns="date", values="duration")
-
-    # Fill missing values with 0
     df.fillna(0, inplace=True)
 
     return df
 
-def summarize_to_dataframe_ugly(summary):
+def summarize_to_dataframe_test(summary):
     data = []
-
     for task, entries in summary.items():
         # Ensure task data is a list of [date, duration] pairs
         if not isinstance(entries, list):
@@ -239,59 +226,57 @@ def summarize_to_dataframe_ugly(summary):
                 if isinstance(date, str) and isinstance(duration, (int, float)):  # Validate types
                     data.append({"task": task, "date": date, "duration": duration})
 
-    # Create DataFrame
     df = pd.DataFrame(data)
-
-    # Pivot to make tasks rows and dates columns
     df = df.pivot(index="task", columns="date", values="duration")
-
-    # Fill missing values with 0
     df.fillna(0, inplace=True)
 
     return df
 
-def export_to_csv():
+def export_to_file():
     stop_task()
     summary = summarize()
-#    dataframe = summarize_to_dataframe(summary);
 
     data = []
-    csv_file = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV files", "*.csv")])
-    if csv_file:
+    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    if xlsx_file:
         # Extract all unique dates and tasks
         dates = sorted(summary.keys())
         tasks = sorted({task for tasks in summary.values() for task in tasks})
-        with open(csv_file, 'w', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow(["Task"] + dates) # Write the header row
-            data.append(["Task"] + dates) # Write the header row
-            # Write the data rows
-            for task in tasks:
-                row = [task]
-                for date in dates:
-                    # Convert minutes to hours, round to 1 decimal place
-                    # If minutes are 0, write an empty string
-                    duration = summary.get(date, {}).get(task, 0)
-                    row.append(f"{duration/60:.1f}" if duration > 0 else "")
-                writer.writerow(row)
-                data.append(row)
-
-            # Add total row
-            total_row = ["Total"]
+     
+        data.append(["Tasks"] + dates) # Write the header row
+        # Write the data rows
+        for task in tasks:
+            row = [task]
             for date in dates:
-                daily_total = sum(summary.get(date, {}).get(task, 0) for task in tasks)
-                total_row.append(f"{daily_total/60:.1f}" if daily_total > 0 else "")
-            writer.writerow(total_row)
-            data.append(total_row)
+                # Convert minutes to hours, round to 1 decimal place
+                # If minutes are 0, write an empty string
+                duration = summary.get(date, {}).get(task, 0)
+                # row.append(f"{duration/60:.1f}" if duration > 0 else 0)
+                # row.append(f"{duration/60:.1f}" if duration > 0 else None)
+                row.append(round(duration / 60, 1) if duration > 0 else None)
+            data.append(row)
 
-            # for .xlsx
-            # total_row = ["Total"] + [f"=SUM(B{len(tasks)+2}:B{len(tasks)+1+dates_count})" for dates_count in range(len(dates))]
+        # Add total row
+        total_row = ["Total"]
+        for date in dates:
+            daily_total = sum(summary.get(date, {}).get(task, 0) for task in tasks)
+            # total_row.append(f"{daily_total/60:.1f}" if daily_total > 0 else "")
+            total_row.append(round(daily_total/60) if daily_total > 0 else None)
+        data.append(total_row)
+
+        # for .xlsx
+        # total_row = ["Total"] + [f"=SUM(B{len(tasks)+2}:B{len(tasks)+1+dates_count})" for dates_count in range(len(dates))]
 
         dataframe = pd.DataFrame(data)
-        with pd.ExcelWriter("./test.xlsx", engine='openpyxl') as writer:
-            dataframe.to_excel(writer, index=False)
+        # dataframe.fillna(0, inplace=True)
+#j        with pd.ExcelWriter(xlsx_file, engine='openpyxl') as writer:
+#           dataframe.to_excel(writer, index=False)
 
-        os.startfile(csv_file)
+        with pd.ExcelWriter(xlsx_file, engine='openpyxl') as writer:
+            dataframe.to_excel(writer, index=False, header=False)
+
+
+        os.startfile(xlsx_file)
 
 # Function to handle delete key press
 def on_delete_key(event):
@@ -432,7 +417,7 @@ reset_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the 
 eod_button = tk.Button(button_frame, text="EoD", command=endofday)
 eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
-export_button = tk.Button(button_frame, text="Export", command=export_to_csv)
+export_button = tk.Button(button_frame, text="Export", command=export_to_file)
 export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
 task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
