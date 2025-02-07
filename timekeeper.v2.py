@@ -10,14 +10,12 @@ installation
 import tkinter as tk
 from   tkinter import ttk, messagebox, filedialog
 import yaml
-import csv
 import os
 import pandas as pd
 from datetime import datetime
 from collections import defaultdict
 
 YAML_FILE = "tasks.yaml"
-BACKUP_YAML_FILE = "tasks_backup.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
 _tasks = {"": [] }
@@ -25,15 +23,15 @@ current_task = None
 start_time = None
 
 """
-Example of _tasks
+Example of _tasks, duration in seconds
 {
     "coding": [
-        ["2024-02-05", 120],
-        ["2024-02-06", 90]
+        ["2024-02-05", 1893],
+        ["2024-02-06", 2345]
     ],
     "reading": [
-        ["2024-02-05", 45],
-        ["2024-02-06", 60]
+        ["2024-02-05", 971],
+        ["2024-02-06", 345]
     ],
     "start_time": "2024-02-05T08:00:00",
     "current_task": "coding"
@@ -58,7 +56,8 @@ def save_tasks():
 
 # Backup tasks to backup YAML file
 def backup_tasks():
-    with open(BACKUP_YAML_FILE, 'w') as file:
+    filename = f"tasks_{datetime.now().strftime('%A').lower()}.yaml"
+    with open(filename, 'w') as file:
         yaml.dump(_tasks, file)
 
 def on_closing():
@@ -99,9 +98,9 @@ def edit_yaml():
     if not os.path.exists(YAML_FILE):
         return
 
-    current = current_task  # Store current task
-    stop_task()  # Stop the current task if running
-    backup_tasks()  # Backup current tasks
+    current = current_task  
+    stop_task() 
+    backup_tasks()
 
     editor_window = tk.Toplevel()  # Use Toplevel, no new Tk()
     editor_window.title("Edit Tasks")
@@ -126,13 +125,13 @@ def edit_yaml():
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
-        editor_window.destroy()  # Close only the edit window
+        editor_window.destroy()
 
     def cancel_changes():
         if current:  # Restart previous task if it exists
             task_var.set(current)
             start_task(current)
-        editor_window.destroy()  # Close only the edit window
+        editor_window.destroy() 
 
     save_button = tk.Button(editor_window, text="Save", command=save_changes)
     save_button.pack(side=tk.LEFT, padx=5, pady=5)
@@ -140,8 +139,9 @@ def edit_yaml():
     cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
-def endofday():
+def end_of_day():
     stop_task()
+    backup_tasks()
     task_var.set('')
     save_tasks()
 
@@ -211,10 +211,9 @@ def export_to_file():
 
         # total_row = ["Total"] + [f"=SUM(B{len(tasks)+2}:B{len(tasks)+1+dates_count})" for dates_count in range(len(dates))]
 
-        # =SUM(B2:B9)
-
-        columns = ["B", "C", "D", "E", "F", "G", "H"]
-        columns = columns[:len(dates)]
+        columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
+        if len(columns) > len(dates):
+            columns = columns[:len(dates)] # truncate to match number of dates
         sum_row = ["Sums"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
         data.append(sum_row)
 
@@ -361,7 +360,7 @@ edit_button.pack(side=tk.LEFT, padx=6, pady=3)
 reset_button = tk.Button(button_frame, text="Reset", command=reset)
 reset_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
-eod_button = tk.Button(button_frame, text="EoD", command=endofday)
+eod_button = tk.Button(button_frame, text="EoD", command=end_of_day)
 eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
 export_button = tk.Button(button_frame, text="Export", command=export_to_file)
