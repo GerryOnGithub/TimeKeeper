@@ -25,7 +25,6 @@ current_task = None
 start_time = None
 red = True
 flashing = False
-# flashing = False
 
 """
 Example of _tasks, duration in seconds
@@ -98,7 +97,7 @@ def update_running_time():
     else:
         running_time.set("00:00:00")
         if not flashing:
-            flash_away()
+            flash_idle()
     root.after(1000, update_running_time)
 
 def edit_yaml():
@@ -151,7 +150,7 @@ def end_of_day():
     backup_tasks()
     task_var.set('')
     save_tasks()
-    flash_away();
+    flash_idle();
 
 def show_reminder():
     root = tk.Tk()
@@ -167,15 +166,14 @@ def flash():
         running_time_label.config(background="white")
     red = not red
 
-def flash_away():
+def flash_idle():
     global red
     global flashing
 
     if task_var.get() == "":
         flashing = True 
         flash()
-        print(f"start timer for flashing")
-        root.after(2000, flash_away)
+        root.after(2000, flash_idle)
     else:
         flashing = False
         red = False
