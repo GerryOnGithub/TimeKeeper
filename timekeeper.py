@@ -208,18 +208,6 @@ def summarize():
 
     return summary
 
-#def summarize_to_dataframe(summary):
-#    data = []
-#    for task, entries in summary.items():
-#        for entry in entries:
-#            if isinstance(entry, list) and len(entry) == 2:
-#                date, duration = entry
-#                data.append({"task": task, "date": date, "duration": duration})
-#    df = pd.DataFrame(data)
-#    df = df.pivot(index="task", columns="date", values="duration")
-#    df.fillna(0, inplace=True)
-#
-#    return df
 def export_to_excel():
     summary = summarize()
 
@@ -241,46 +229,11 @@ def export_to_excel():
                 row.append(round(duration / 60 / 60, 2) if duration > 0 else None)
             rows.append(row)
 
-        # Sort rows using later dates first, None at the bottom
+        # Reverse sort date rows by task time (None at the bottom) to create a cascade of tasks M-F
         for col in reversed(range(1, len(dates) + 1)):  # Start sorting from last date
             rows.sort(key=lambda x: (x[col] is None, x[col] if x[col] is not None else 0))
 
         data.extend(rows)  # Append sorted rows back
-
-        columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
-        if len(columns) > len(dates):
-            columns = columns[:len(dates)] # truncate to match number of dates
-        sum_row = ["Sums"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
-        data.append(sum_row)
-
-        dataframe = pd.DataFrame(data)
-        # dataframe.fillna(0, inplace=True) # use this to prefill with 0's
-        with pd.ExcelWriter(xlsx_file, engine='openpyxl') as writer:
-            dataframe.to_excel(writer, index=False, header=False) # header is annoying...
-
-        os.startfile(xlsx_file)
-
-def export_to_excel_backyp():
-    # stop_task()
-    summary = summarize()
-
-    data = []
-    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-    if xlsx_file:
-        # extract unique dates and tasks
-        dates = sorted(summary.keys())
-        tasks = sorted({task for tasks in summary.values() for task in tasks})
-     
-        data.append(["Tasks"] + dates) # create the header row
-
-        # create the data rows
-        for task in tasks:
-            row = [task]
-            for date in dates:
-                duration = summary.get(date, {}).get(task, 0)
-                # convert seconds to hours, round to 2 decimal places
-                row.append(round(duration / 60 / 60, 2) if duration > 0 else None)
-            data.append(row)
 
         columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
         if len(columns) > len(dates):
@@ -315,10 +268,6 @@ def on_task_selected(event):
         return;
     if selected_task != current_task:
         on_task_changed(event)
-    #if selected_task == "Select Task":
-    #    stop_task()
-    #    return
-    # start_task(selected_task)
 
 def on_task_changed(event):
     # print(f"task changed")
