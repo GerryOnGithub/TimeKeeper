@@ -230,7 +230,7 @@ def export_to_excel():
             rows.append(row)
 
         # Reverse sort date rows by task time (None at the bottom) to create a cascade of tasks M-F
-        for col in reversed(range(1, len(dates) + 1)):  # Start sorting from last date
+        for col in reversed(range(1, len(dates) + 1)):  # sorting last date to first
             rows.sort(key=lambda x: (x[col] is None, x[col] if x[col] is not None else 0))
 
         data.extend(rows)  # Append sorted rows back
@@ -238,7 +238,7 @@ def export_to_excel():
         columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
         if len(columns) > len(dates):
             columns = columns[:len(dates)] # truncate to match number of dates
-        sum_row = ["Sums"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
+        sum_row = ["Sum"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
         data.append(sum_row)
 
         dataframe = pd.DataFrame(data)
