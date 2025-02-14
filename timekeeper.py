@@ -220,8 +220,47 @@ def summarize():
 #    df.fillna(0, inplace=True)
 #
 #    return df
-
 def export_to_excel():
+    summary = summarize()
+
+    data = []
+    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    if xlsx_file:
+        # Extract unique dates and tasks
+        dates = sorted(summary.keys())  # Keep dates in normal order (Monday → Friday)
+        tasks = sorted({task for tasks in summary.values() for task in tasks})
+
+        data.append(["Tasks"] + dates)  # Create header row
+
+        # Create data rows
+        rows = []
+        for task in tasks:
+            row = [task]
+            for date in dates:
+                duration = summary.get(date, {}).get(task, 0)
+                row.append(round(duration / 60 / 60, 2) if duration > 0 else None)
+            rows.append(row)
+
+        # Sort rows using later dates first, None at the bottom
+        for col in reversed(range(1, len(dates) + 1)):  # Start sorting from last date
+            rows.sort(key=lambda x: (x[col] is None, x[col] if x[col] is not None else 0))
+
+        data.extend(rows)  # Append sorted rows back
+
+        columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
+        if len(columns) > len(dates):
+            columns = columns[:len(dates)] # truncate to match number of dates
+        sum_row = ["Sums"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
+        data.append(sum_row)
+
+        dataframe = pd.DataFrame(data)
+        # dataframe.fillna(0, inplace=True) # use this to prefill with 0's
+        with pd.ExcelWriter(xlsx_file, engine='openpyxl') as writer:
+            dataframe.to_excel(writer, index=False, header=False) # header is annoying...
+
+        os.startfile(xlsx_file)
+
+def export_to_excel_backyp():
     # stop_task()
     summary = summarize()
 
