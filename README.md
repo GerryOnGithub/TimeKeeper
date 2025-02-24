@@ -3,26 +3,21 @@ Python program to track time.
 
 ![Alt-text](images/tk-1.png)
 
-Goal 1: track time with the least amount of distruption
+Goal 1: track time with the least amount of distraction/distruption/effort
 
-Goal 2: track time with the least amount of distraction
-
-Goal 3: track time with the least amount of effort
+Goal 2: summarize task durations to xlsx for easy copying to timesheet(s)
 
 ### Install dependencies
-pip install pyyaml
 
-#### windows
-pip install pyyaml
+Refer to the notes at the beginning of the file timekeeper.py
 
-#### linux
-sudo apt-get install python-yaml
+### Latest
 
-sudo apt-get install python3-tk
+Updated task tracking to use minutes (rather than seconds) to make 'Edit' easier
 
 ### How To
 
-To run: python ./timekeeper.v2.py
+To run: python ./timekeeper.py
 
 To start tracking: type a task name then go work on the task
 

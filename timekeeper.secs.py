@@ -21,22 +21,21 @@ YAML_FILE = "tasks.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
 _tasks = {"": [] }
-_sort = False
 current_task = None
 start_time = None
+red = True
 flashing = False
-red = False
 
 """
-Example of _tasks, duration in minutes
+Example of _tasks, duration in seconds
 {
     "coding": [
-        ["2024-02-05", 180],
-        ["2024-02-06", 43]
+        ["2024-02-05", 1893],
+        ["2024-02-06", 2345]
     ],
     "reading": [
-        ["2024-02-05", 91],
-        ["2024-02-06", 45]
+        ["2024-02-05", 971],
+        ["2024-02-06", 345]
     ],
     "start_time": "2024-02-05T08:00:00",
     "current_task": "coding"
@@ -77,17 +76,19 @@ def start_task(task):
     start_time = datetime.now()
     update_running_time()
 
+# Stop recording time for the current task
 def stop_task():
     global current_task, start_time
     if current_task and start_time and current_task != "":
         end_time = datetime.now()
-       # duration = round((end_time - start_time).total_seconds()) # seconds
-        duration = round((end_time - start_time).total_seconds() / 60) # round to nearest minute
+        duration = round((end_time - start_time).total_seconds()) # seconds
+        # duration = round((end_time - start_time).total_seconds() / 60) # round to nearest minute
         _tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
         save_tasks()
     current_task = None
     start_time = None
 
+# Update running time display
 def update_running_time():
     if current_task and start_time:
         elapsed = datetime.now() - start_time
@@ -102,10 +103,10 @@ def edit_yaml():
     if not os.path.exists(YAML_FILE):
         return
 
+    # TODO clear the current selection from the dropdown - in case the user deletes from the yaml
     current = current_task  
     stop_task() 
     backup_tasks()
-    dropdown_string.set('')
 
     editor_window = tk.Toplevel()  # Use Toplevel, no new Tk()
     editor_window.title("Edit Tasks")
@@ -128,13 +129,13 @@ def edit_yaml():
         load_tasks_from_disk()  # Reload tasks from the edited YAML file
         load_sort_tasks()
         if current:  # Restart previous task if it exists
-            dropdown_string.set(current)
+            task_var.set(current)
             start_task(current)
         editor_window.destroy()
 
     def cancel_changes():
         if current:  # Restart previous task if it exists
-            dropdown_string.set(current)
+            task_var.set(current)
             start_task(current)
         editor_window.destroy() 
 
@@ -147,7 +148,7 @@ def edit_yaml():
 def end_of_day():
     stop_task()
     backup_tasks()
-    dropdown_string.set('')
+    task_var.set('')
     save_tasks()
     flash_idle();
 
@@ -169,7 +170,7 @@ def flash_idle():
     global red
     global flashing
 
-    if dropdown_string.get() == "":
+    if task_var.get() == "":
         flashing = True 
         flash()
         root.after(999, flash_idle)
@@ -225,7 +226,7 @@ def export_to_excel():
             row = [task]
             for date in dates:
                 duration = summary.get(date, {}).get(task, 0)
-                row.append(round(duration / 60, 2) if duration > 0 else None)
+                row.append(round(duration / 60 / 60, 2) if duration > 0 else None)
             rows.append(row)
 
         # Reverse sort date rows by task time (None at the bottom) to create a cascade of tasks M-F
@@ -249,12 +250,12 @@ def export_to_excel():
 
 # Function to handle delete key press
 def on_delete_key(event):
-    selected_task = dropdown_string.get()
+    selected_task = task_var.get()
     if selected_task == "":
         return
 
     if selected_task and selected_task in _tasks:
-        dropdown_string.set("")
+        task_var.set("")
         stop_task()
         del _tasks[selected_task]
         load_sort_tasks()
@@ -262,7 +263,7 @@ def on_delete_key(event):
 
 def on_task_selected(event):
     # print(f"task selected")
-    selected_task = dropdown_string.get()
+    selected_task = task_var.get()
     if selected_task == current_task:
         return;
     if selected_task != current_task:
@@ -270,7 +271,7 @@ def on_task_selected(event):
 
 def on_task_changed(event):
     # print(f"task changed")
-    selected_task = dropdown_string.get()
+    selected_task = task_var.get()
     if selected_task == current_task:
         return;
 
@@ -279,16 +280,16 @@ def on_task_changed(event):
         save_tasks()  # Save immediately
         # load_tasks(False)  # Reload tasks from file (ensures consistency)
 
-        # explicitly update dropdown values
+        # Explicitly update dropdown values
         load_sort_tasks()
-        dropdown_string.set(selected_task)
+        task_var.set(selected_task)  # necessary?
 
     start_task(selected_task)
     print(f"start task: {selected_task}")
 
 def on_lost_focus(event):
     # print(f"lost focus")
-    selected_task = dropdown_string.get()
+    selected_task = task_var.get()
     if selected_task == current_task:
         return;
 
@@ -298,11 +299,21 @@ def on_lost_focus(event):
         save_tasks()
         start_task(selected_task)
 
+#def on_task_changed_old(event):
+#    print(f"task changed")
+#    selected_task = task_var.get()
+#    if selected_task not in _tasks:
+#        _tasks[selected_task] = []
+#        save_tasks()
+#        load_tasks()
+#        load_sort_tasks()
+#        resize_dropdown()
+#
+#    start_task(selected_task)
+#    print(f"start task: {selected_task}")
+
 def load_sort_tasks():
-    if _sort == True:
-        task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
-    else:
-        task_dropdown['values'] = list(_tasks.keys())
+    task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
     resize_dropdown()
 
 def reset():
@@ -321,8 +332,9 @@ def disable_maximize(event=None):
 def resize_dropdown():
     task_dropdown.config(height=len(task_dropdown['values']))
 
-root = tk.Tk() # create main window
-root.title("TK v1.08")
+# create main window
+root = tk.Tk()
+root.title("TK v1.07")
 root.geometry("220x92")
 root.attributes("-topmost", True)
 root.configure(bg="#AAAADE") # rgb
@@ -331,10 +343,9 @@ root.bind('<Map>', disable_maximize)
 
 load_tasks_from_disk()
 
-dropdown_string = tk.StringVar(value="") # this string var represents the current value displayed in task_dropdown (below)
-
 # dropdown for task selection
-task_dropdown = ttk.Combobox(root, textvariable=dropdown_string)
+task_var = tk.StringVar(value="")
+task_dropdown = ttk.Combobox(root, textvariable=task_var)
 task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
 load_sort_tasks()
 
