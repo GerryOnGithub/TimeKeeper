@@ -138,10 +138,10 @@ def edit_yaml():
             start_task(current)
         editor_window.destroy() 
 
-    save_button = tk.Button(editor_window, text="Save", command=save_changes)
+    save_button = tk.Button(editor_window, text="Save", command=save_changes, bg="green", fg="white")
     save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-    cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes)
+    cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes, bg="red")
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
 def end_of_day():
@@ -351,16 +351,16 @@ running_time_label.pack(pady=0)
 button_frame = tk.Frame(root, bg=root.cget("bg"), highlightthickness=0, borderwidth=0)
 button_frame.pack(side=tk.BOTTOM, pady=4)
 
-eod_button = tk.Button(button_frame, text="EoD", command=end_of_day)
+eod_button = tk.Button(button_frame, text="EoD", command=end_of_day, bg="dark grey")
 eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
-export_button = tk.Button(button_frame, text="Export", command=export_to_excel)
+export_button = tk.Button(button_frame, text="Export", command=export_to_excel, bg="green", fg="white")
 export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
-edit_button = tk.Button(button_frame, text="Edit", command=edit_yaml)
+edit_button = tk.Button(button_frame, text="Edit", command=edit_yaml, bg="#ADD8E6", fg="blue")
 edit_button.pack(side=tk.LEFT, padx=6, pady=3)
 
-reset_button = tk.Button(button_frame, text="Reset", command=reset)
+reset_button = tk.Button(button_frame, text="Reset", command=reset, bg="#B22222", fg="white")
 reset_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
 task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
