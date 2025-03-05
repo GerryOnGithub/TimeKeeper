@@ -59,10 +59,12 @@ def save_tasks():
 
 # Backup tasks to backup YAML file
 def backup_tasks():
-    filename = f"tasks_{datetime.now().strftime('%A').lower()}.yaml"
+    filename = f"backup_{datetime.now().strftime('%A').lower()}.yaml"
     with open(filename, 'w') as file:
         yaml.dump(_tasks, file)
-    print(f"tasks file backed up")
+    filename = f"backup_{datetime.now().strftime('%A').lower()}.xlsx"
+    continue_export_to_excel(filename, False)
+    print(f"EOD: tasks file backed up")
 
 def on_closing():
     stop_task()
@@ -207,11 +209,16 @@ def summarize():
 
     return summary
 
-def export_to_excel():
+def maybe_export_to_excel():
+    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    if xlsx_file:
+        continue_export_to_excel(xlsx_file, True)
+
+def continue_export_to_excel(xlsx_file, launch):
     summary = summarize()
 
     data = []
-    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    # xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
     if xlsx_file:
         # Extract unique dates and tasks
         dates = sorted(summary.keys())  # Keep dates in normal order (Monday → Friday)
@@ -245,7 +252,8 @@ def export_to_excel():
         with pd.ExcelWriter(xlsx_file, engine='openpyxl') as writer:
             dataframe.to_excel(writer, index=False, header=False) # header is annoying...
 
-        os.startfile(xlsx_file)
+        if launch:
+            os.startfile(xlsx_file)
 
 # Function to handle delete key press
 def on_delete_key(event):
@@ -354,7 +362,7 @@ button_frame.pack(side=tk.BOTTOM, pady=4)
 eod_button = tk.Button(button_frame, text="EoD", command=end_of_day, bg="dark grey")
 eod_button.pack(side=tk.LEFT, padx=6, pady=3)  # Use LEFT to keep them in the same row
 
-export_button = tk.Button(button_frame, text="Export", command=export_to_excel, bg="green", fg="white")
+export_button = tk.Button(button_frame, text="Export", command=maybe_export_to_excel, bg="green", fg="white")
 export_button.pack(side=tk.LEFT, padx=6, pady=3)
 
 edit_button = tk.Button(button_frame, text="Edit", command=edit_yaml, bg="#ADD8E6", fg="blue")
