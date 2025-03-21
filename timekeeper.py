@@ -21,7 +21,6 @@ YAML_FILE = "tasks.yaml"
 DATE_FORMAT = "%Y-%m-%d %H:%M"
 
 _tasks = {"": [] }
-_sort = False
 current_task = None
 start_time = None
 flashing = False
@@ -64,7 +63,7 @@ def backup_tasks():
         yaml.dump(_tasks, file)
     filename = f"backup_{datetime.now().strftime('%A').lower()}.xlsx"
     continue_export_to_excel(filename, False)
-    print(f"EOD: tasks file backed up")
+    print(f"tasks back up ran")
 
 def on_closing():
     stop_task()
@@ -128,7 +127,8 @@ def edit_yaml():
         with open(YAML_FILE, 'w') as file:
             file.write(text_area.get("1.0", tk.END))
         load_tasks_from_disk()  # Reload tasks from the edited YAML file
-        load_sort_tasks()
+        load_tasks()
+        resize_dropdown()
         if current:  # Restart previous task if it exists
             dropdown_string.set(current)
             start_task(current)
@@ -140,10 +140,10 @@ def edit_yaml():
             start_task(current)
         editor_window.destroy() 
 
-    save_button = tk.Button(editor_window, text="Save", command=save_changes, bg="green", fg="white")
+    save_button = tk.Button(editor_window, text=" Save ", command=save_changes, bg="green", fg="white")
     save_button.pack(side=tk.LEFT, padx=5, pady=5)
 
-    cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes, bg="red")
+    cancel_button = tk.Button(editor_window, text="Cancel", command=cancel_changes, bg="red", fg="white")
     cancel_button.pack(side=tk.RIGHT, padx=5, pady=5)
 
 def end_of_day():
@@ -191,6 +191,11 @@ def schedule_reminder():
     show_reminder()
 
 def summarize():
+    global current_task;
+    if current_task:
+        stop_task()
+    dropdown_string.set('')
+
     summary = defaultdict(lambda: defaultdict(int))
 
     # Iterate over each task and its entries in the data dictionary
@@ -265,7 +270,8 @@ def on_delete_key(event):
         dropdown_string.set("")
         stop_task()
         del _tasks[selected_task]
-        load_sort_tasks()
+        load_tasks()
+        resize_dropdown()
         save_tasks()
 
 def on_task_selected(event):
@@ -277,7 +283,7 @@ def on_task_selected(event):
         on_task_changed(event)
 
 def on_task_changed(event):
-    # print(f"task changed")
+    print(f"task changed...")
     selected_task = dropdown_string.get()
     if selected_task == current_task:
         return;
@@ -288,7 +294,8 @@ def on_task_changed(event):
         # load_tasks(False)  # Reload tasks from file (ensures consistency)
 
         # explicitly update dropdown values
-        load_sort_tasks()
+        load_tasks()
+        resize_dropdown()
         dropdown_string.set(selected_task)
 
     start_task(selected_task)
@@ -302,16 +309,21 @@ def on_lost_focus(event):
 
     if selected_task not in _tasks:
         _tasks[selected_task] = []
-        load_sort_tasks()
+        load_tasks()
+        resize_dropdown()
         save_tasks()
         start_task(selected_task)
 
-def load_sort_tasks():
-    if _sort == True:
+# sort useful? yes and no...
+def load_sort_tasks(sort):
+    if sort == True:
         task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
     else:
         task_dropdown['values'] = list(_tasks.keys())
     resize_dropdown()
+
+def load_tasks():
+    task_dropdown['values'] = list(_tasks.keys())
 
 def reset():
     response = messagebox.askyesno("Confirm Reset", "Are you sure you wish to reset all tasks to zero?")
@@ -320,7 +332,8 @@ def reset():
         backup_tasks()
         for key in _tasks:
             _tasks[key].clear()
-        load_sort_tasks()
+        load_tasks()
+        resize_dropdown()
         save_tasks()
 
 def disable_maximize(event=None):
@@ -344,7 +357,8 @@ dropdown_string = tk.StringVar(value="") # this string var represents the curren
 # dropdown for task selection
 task_dropdown = ttk.Combobox(root, textvariable=dropdown_string)
 task_dropdown.pack(pady=3, padx=3, fill=tk.X, expand=True, anchor='n')
-load_sort_tasks()
+load_tasks()
+resize_dropdown()
 
 task_dropdown.bind("<<ComboboxSelected>>", on_task_selected)
 task_dropdown.bind("<Return>", on_task_changed)
@@ -376,9 +390,9 @@ task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # reminder for user to select a task at the beginning of the day
-reminder_thread = threading.Thread(target=schedule_reminder)
-reminder_thread.daemon = True
-reminder_thread.start()
+#reminder_thread = threading.Thread(target=schedule_reminder)
+#reminder_thread.daemon = True
+#reminder_thread.start()
 
 print(f"running...")
 root.mainloop()
