@@ -66,23 +66,27 @@ def backup_tasks():
     print(f"tasks back up ran")
 
 def on_closing():
+    print(f"closing...")
     stop_task()
+    # print(f"save tasks 1")
     save_tasks()
     root.destroy()
 
 def start_task(task):
     global current_task, start_time
     if current_task:
+        print(f"stop task {current_task}")
         stop_task()
     current_task = task
+    print(f"start task {current_task}")
     start_time = datetime.now()
     update_running_time()
 
 def stop_task():
+    print(f"stop current task...")
     global current_task, start_time
     if current_task and start_time and current_task != "":
         end_time = datetime.now()
-       # duration = round((end_time - start_time).total_seconds()) # seconds
         duration = round((end_time - start_time).total_seconds() / 60) # round to nearest minute
         _tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
         save_tasks()
@@ -105,8 +109,8 @@ def edit_yaml():
 
     current = current_task  
     stop_task() 
-    backup_tasks()
     dropdown_string.set('')
+    backup_tasks()
 
     editor_window = tk.Toplevel()  # Use Toplevel, no new Tk()
     editor_window.title("Edit Tasks")
@@ -150,6 +154,7 @@ def end_of_day():
     stop_task()
     backup_tasks()
     dropdown_string.set('')
+    # print(f"save tasks 3")
     save_tasks()
     flash_idle();
 
@@ -272,6 +277,7 @@ def on_delete_key(event):
         del _tasks[selected_task]
         load_tasks()
         resize_dropdown()
+        # print(f"save tasks 4")
         save_tasks()
 
 def on_task_selected(event):
@@ -290,6 +296,7 @@ def on_task_changed(event):
 
     if selected_task not in _tasks:
         _tasks[selected_task] = []
+        # print(f"save tasks 5")
         save_tasks()  # Save immediately
         # load_tasks(False)  # Reload tasks from file (ensures consistency)
 
@@ -299,23 +306,24 @@ def on_task_changed(event):
         dropdown_string.set(selected_task)
 
     start_task(selected_task)
-    print(f"start task: {selected_task}")
 
 def on_lost_focus(event):
-    # print(f"lost focus")
     selected_task = dropdown_string.get()
     if selected_task == current_task:
         return;
 
+    print(f"lost focus (task changed)")
     if selected_task not in _tasks:
         _tasks[selected_task] = []
         load_tasks()
         resize_dropdown()
+        # print(f"save tasks 6")
         save_tasks()
         start_task(selected_task)
 
 # sort useful? yes and no...
 def load_sort_tasks(sort):
+    print(f"load tasks, sort = {sort}")
     if sort == True:
         task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
     else:
@@ -328,13 +336,16 @@ def load_tasks():
 def reset():
     response = messagebox.askyesno("Confirm Reset", "Are you sure you wish to reset all tasks to zero?")
     if response:
+        print(f"start reset")
         stop_task()
         backup_tasks()
         for key in _tasks:
             _tasks[key].clear()
         load_tasks()
         resize_dropdown()
+        # print(f"save tasks 7")
         save_tasks()
+        print(f"done reset")
 
 def disable_maximize(event=None):
     root.state('normal')
@@ -342,8 +353,9 @@ def disable_maximize(event=None):
 def resize_dropdown():
     task_dropdown.config(height=len(task_dropdown['values']))
 
+print(f"init...")
 root = tk.Tk() # create main window
-root.title("TK v1.08")
+root.title("TK v1.09")
 root.geometry("220x92")
 root.attributes("-topmost", True)
 root.configure(bg="#AAAADE") # rgb
@@ -389,10 +401,10 @@ task_dropdown['values'] = sorted(list(_tasks.keys()), key=str.lower)
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
 
-# reminder for user to select a task at the beginning of the day
-#reminder_thread = threading.Thread(target=schedule_reminder)
-#reminder_thread.daemon = True
-#reminder_thread.start()
+# remind user to select a task at the beginning of the day...
+# reminder_thread = threading.Thread(target=schedule_reminder)
+# reminder_thread.daemon = True
+# reminder_thread.start()
 
 print(f"running...")
 root.mainloop()
