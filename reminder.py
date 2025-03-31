@@ -1,31 +1,41 @@
+'''
+tasklist /FI "IMAGENAME eq python.exe"
+taskkill /PID 33676 /F
+'''
+
+
 import tkinter as tk
 # from tkinter import ttk, messagebox
 import argparse
 import time
 import threading
+import datetime
 
 root = None
 stop_reminder = False
 
 def disable_maximize(event = None):
     global root
-    root.state('normal')
+    # root.state('normal')
 
 class ReminderApp:
     def __init__(self, message = "Reminder!", minutes = 30):
+        # global root
         self.message = message
         self.minutes = minutes
         self.root = tk.Tk()
-        root = self.root
-        self.root.attributes("-topmost", True)
-        self.root.configure(bg="#AAAADE") # rgb'
-        self.root.bind('<Map>', disable_maximize)
-        self.root.withdraw()  # Hide the main window
+        #root = self.root
+        #self.root.attributes("-topmost", True)
+        #self.root.configure(bg="#AAAADE") # rgb'
+        #self.root.bind('<Map>', disable_maximize)
         # self.root.geometry("220x92")
+        self.root.withdraw()  # Hide the main window
 
     def show_reminder(self):
         # Create a toplevel window
-        print(f"it's time")
+        now = datetime.datetime.now()
+        current_time = now.strftime("%H:%M:%S")
+        print(f"it's time {current_time}")
         popup = tk.Toplevel(self.root)
         popup.title("Reminder")
         popup.configure(bg="#AAAADE")
@@ -35,9 +45,22 @@ class ReminderApp:
         label.pack()
 
     def run(self):
-        while True:
+        global stop_reminder
+        while not stop_reminder:
+            print("sleeping... ")
             time.sleep(self.minutes * 60)
-            self.show_reminder()
+            if not stop_reminder:
+                popup = tk.Toplevel(self.root)
+                popup.attributes("-topmost", True) # Make the popup topmost
+                popup.title("Reminder")
+                popup.configure(bg="#AAAADE")
+                # popup.bind('<Map>', disable_maximize)
+                popup.geometry("220x40")
+
+                # Add a label with the message
+                label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
+                label.pack()
+                popup.wait_window()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="A simple reminder application.")
