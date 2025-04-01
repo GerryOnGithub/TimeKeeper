@@ -31,18 +31,15 @@ class ReminderApp:
         # self.root.geometry("220x92")
         self.root.withdraw()  # Hide the main window
 
-    def show_reminder(self):
-        # Create a toplevel window
-        now = datetime.datetime.now()
-        current_time = now.strftime("%H:%M:%S")
-        print(f"it's time {current_time}")
-        popup = tk.Toplevel(self.root)
-        popup.title("Reminder")
-        popup.configure(bg="#AAAADE")
+#   def show_reminder(self):
+#       # Create a toplevel window
+#       popup = tk.Toplevel(self.root)
+#       popup.title("Reminder")
+#       popup.configure(bg="#AAAADE")
 
-        # Add a label with the message
-        label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
-        label.pack()
+#       # Add a label with the message
+#       label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
+#       label.pack()
 
     def run(self):
         global stop_reminder
@@ -50,6 +47,9 @@ class ReminderApp:
             print("sleeping... ")
             time.sleep(self.minutes * 60)
             if not stop_reminder:
+                now = datetime.datetime.now()
+                current_time = now.strftime("%H:%M:%S")
+                print(f"it's time {current_time}")
                 popup = tk.Toplevel(self.root)
                 popup.attributes("-topmost", True) # Make the popup topmost
                 popup.title("Reminder")
@@ -79,4 +79,4 @@ if __name__ == "__main__":
     try:
         tk.mainloop()
     except KeyboardInterrupt:
-        print("Exiting...")
+        print("exiting...")
