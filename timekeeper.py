@@ -356,7 +356,9 @@ def resize_dropdown():
 print(f"init...")
 root = tk.Tk() # create main window
 root.title("TK v1.09")
-root.geometry("220x92")
+root.geometry("216x92")
+root.minsize(216, 26)
+root.maxsize(460, 90)
 root.attributes("-topmost", True)
 root.configure(bg="#AAAADE") # rgb
 
