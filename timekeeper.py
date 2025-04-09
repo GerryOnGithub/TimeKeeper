@@ -42,19 +42,18 @@ Example of _tasks, duration in minutes
 }
 """
 
-# Load tasks from YAML file
 def load_tasks_from_disk():
+   print(f"load_tasks_from_disk")
    global _tasks, current_task, start_time
    if os.path.exists(YAML_FILE):
         with open(YAML_FILE, 'r') as file:
            _tasks = yaml.load(file, Loader=yaml.UnsafeLoader)
 
-# Save tasks to YAML file
-def save_tasks():
+def save_tasks_to_disk(where):
+   print(f"save_tasks_from_disk from {where}")
    tasks_to_save = _tasks.copy()
    with open(YAML_FILE, 'w') as file:
        yaml.dump(tasks_to_save, file)
-   print(f"tasks saved to disk")
 
 # Backup tasks to backup YAML file
 def backup_tasks():
@@ -68,8 +67,7 @@ def backup_tasks():
 def on_closing():
     print(f"closing...")
     stop_task()
-    # print(f"save tasks 1")
-    save_tasks()
+    save_tasks_to_disk('on closing')
     root.destroy()
 
 def start_task(task):
@@ -89,7 +87,7 @@ def stop_task():
         end_time = datetime.now()
         duration = round((end_time - start_time).total_seconds() / 60) # round to nearest minute
         _tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
-        save_tasks()
+        save_tasks_to_disk('stop task')
     current_task = None
     start_time = None
 
@@ -154,8 +152,7 @@ def end_of_day():
     stop_task()
     backup_tasks()
     dropdown_string.set('')
-    # print(f"save tasks 3")
-    save_tasks()
+    save_tasks_to_disk('end of day')
     flash_idle();
 
 def show_reminder():
@@ -277,8 +274,7 @@ def on_delete_key(event):
         del _tasks[selected_task]
         load_tasks()
         resize_dropdown()
-        # print(f"save tasks 4")
-        save_tasks()
+        save_tasks_to_disk('on delete key')
 
 def on_task_selected(event):
     # print(f"task selected")
@@ -296,8 +292,7 @@ def on_task_changed(event):
 
     if selected_task not in _tasks:
         _tasks[selected_task] = []
-        # print(f"save tasks 5")
-        save_tasks()  # Save immediately
+        save_tasks_to_disk('on task changed')
         # load_tasks(False)  # Reload tasks from file (ensures consistency)
 
         # explicitly update dropdown values
@@ -317,8 +312,7 @@ def on_lost_focus(event):
         _tasks[selected_task] = []
         load_tasks()
         resize_dropdown()
-        # print(f"save tasks 6")
-        save_tasks()
+        save_tasks_to_disk('lost focus')
         start_task(selected_task)
 
 # sort useful? yes and no...
@@ -343,8 +337,7 @@ def reset():
             _tasks[key].clear()
         load_tasks()
         resize_dropdown()
-        # print(f"save tasks 7")
-        save_tasks()
+        save_tasks_to_disk('reset')
         print(f"done reset")
 
 def disable_maximize(event=None):
@@ -354,10 +347,11 @@ def resize_dropdown():
     task_dropdown.config(height=len(task_dropdown['values']))
 
 print(f"init...")
+
 root = tk.Tk() # create main window
-root.title("TK v1.09")
+root.title("TK v1.10")
 root.geometry("216x92")
-root.minsize(216, 26)
+root.minsize(216, 27)
 root.maxsize(460, 90)
 root.attributes("-topmost", True)
 root.configure(bg="#AAAADE") # rgb

@@ -3,7 +3,6 @@ tasklist /FI "IMAGENAME eq python.exe"
 taskkill /PID 33676 /F
 '''
 
-
 import tkinter as tk
 # from tkinter import ttk, messagebox
 import argparse
@@ -11,12 +10,8 @@ import time
 import threading
 import datetime
 
-root = None
+# root = None
 stop_reminder = False
-
-def disable_maximize(event = None):
-    global root
-    # root.state('normal')
 
 class ReminderApp:
     def __init__(self, message = "Reminder!", minutes = 30):
@@ -27,7 +22,6 @@ class ReminderApp:
         #root = self.root
         #self.root.attributes("-topmost", True)
         #self.root.configure(bg="#AAAADE") # rgb'
-        #self.root.bind('<Map>', disable_maximize)
         # self.root.geometry("220x92")
         self.root.withdraw()  # Hide the main window
 
@@ -40,6 +34,7 @@ class ReminderApp:
 #       # Add a label with the message
 #       label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
 #       label.pack()
+
 
     def run(self):
         global stop_reminder
@@ -54,10 +49,9 @@ class ReminderApp:
                 popup.attributes("-topmost", True) # Make the popup topmost
                 popup.title("Reminder")
                 popup.configure(bg="#AAAADE")
-                # popup.bind('<Map>', disable_maximize)
                 popup.geometry("220x40")
-                popup.minsize(220, 30)
-                popup.maxsize(260, 90)
+                popup.minsize(220, 40)
+                popup.maxsize(920, 40)
 
                 # Add a label with the message
                 label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
