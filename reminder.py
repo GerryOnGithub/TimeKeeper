@@ -10,7 +10,6 @@ import time
 import threading
 import datetime
 
-# root = None
 stop_reminder = False
 
 class ReminderApp:
@@ -19,22 +18,7 @@ class ReminderApp:
         self.message = message
         self.minutes = minutes
         self.root = tk.Tk()
-        #root = self.root
-        #self.root.attributes("-topmost", True)
-        #self.root.configure(bg="#AAAADE") # rgb'
-        # self.root.geometry("220x92")
         self.root.withdraw()  # Hide the main window
-
-#   def show_reminder(self):
-#       # Create a toplevel window
-#       popup = tk.Toplevel(self.root)
-#       popup.title("Reminder")
-#       popup.configure(bg="#AAAADE")
-
-#       # Add a label with the message
-#       label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
-#       label.pack()
-
 
     def run(self):
         global stop_reminder
@@ -48,7 +32,7 @@ class ReminderApp:
                 popup = tk.Toplevel(self.root)
                 popup.attributes("-topmost", True) # Make the popup topmost
                 popup.title("Reminder")
-                popup.configure(bg="#AAAADE")
+                popup.configure(bg="#ffdbfe")
                 popup.geometry("220x40")
                 popup.minsize(220, 40)
                 popup.maxsize(920, 40)
