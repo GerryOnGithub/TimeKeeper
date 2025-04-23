@@ -80,10 +80,14 @@ def start_task(task):
     start_time = datetime.now()
     update_running_time()
 
+def valid_current_task():
+    global current_task
+    return current_task and start_time and current_task != "" and current_task in _tasks
+
 def stop_task():
     print(f"stop current task...")
     global current_task, start_time
-    if current_task and start_time and current_task != "":
+    if valid_current_task():
         end_time = datetime.now()
         duration = round((end_time - start_time).total_seconds() / 60) # round to nearest minute
         _tasks[current_task].append((start_time.strftime(DATE_FORMAT), duration))
@@ -349,7 +353,7 @@ def resize_dropdown():
 print(f"init...")
 
 root = tk.Tk() # create main window
-root.title("TK v1.10")
+root.title("TK v1.11")
 root.geometry("216x92")
 root.minsize(216, 27)
 root.maxsize(460, 90)

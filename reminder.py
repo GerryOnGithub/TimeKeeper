@@ -34,11 +34,11 @@ class ReminderApp:
                 popup.title("Reminder")
                 popup.configure(bg="#ffdbfe")
                 popup.geometry("220x40")
-                popup.minsize(220, 40)
+#               popup.minsize(220, 40)
+                popup.minsize(216, 27)
                 popup.maxsize(920, 40)
-
                 # Add a label with the message
-                label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#AAAADE")
+                label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#ffdbfe")
                 label.pack()
                 popup.wait_window()
 
