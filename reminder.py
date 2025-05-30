@@ -36,7 +36,8 @@ class ReminderApp:
                 popup.geometry("220x40")
 #               popup.minsize(220, 40)
                 popup.minsize(216, 27)
-                popup.maxsize(920, 40)
+#               popup.maxsize(920, 40)
+                popup.maxsize(920, 27)
                 # Add a label with the message
                 label = tk.Label(popup, text=self.message, padx=20, pady=10, bg="#ffdbfe")
                 label.pack()

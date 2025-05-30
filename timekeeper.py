@@ -235,7 +235,7 @@ def continue_export_to_excel(xlsx_file, launch):
         dates = sorted(summary.keys())  # Keep dates in normal order (Monday → Friday)
         tasks = sorted({task for tasks in summary.values() for task in tasks})
 
-        data.append(["Tasks"] + dates)  # Create header row
+        data.append([" "] + dates)  # Create header row
 
         # Create data rows
         rows = []
@@ -255,7 +255,7 @@ def continue_export_to_excel(xlsx_file, launch):
         columns = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"] # should be enough...
         if len(columns) > len(dates):
             columns = columns[:len(dates)] # truncate to match number of dates
-        sum_row = ["Sum"] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
+        sum_row = [" "] + [f"=SUM({col}2:{col}{len(tasks)+1})" for col in columns]
         data.append(sum_row)
 
         dataframe = pd.DataFrame(data)
