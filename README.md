@@ -13,7 +13,7 @@ Refer to the notes at the beginning of the file timekeeper.py
 
 ### Latest
 
-Updated task tracking to use minutes (rather than seconds) to make 'Edit' easier
+Updated task tracking to use minutes to make 'Edit' easier
 
 ### How To
 
@@ -27,7 +27,7 @@ To restart tracking: select the entry from the drop down
 
 To save to disk: select a different item from the drop down, or close the program (hit X), or Edit Tasks, or hit EoD (end of day)
 
-To edit time assigned to a task (in seconds): hit the Edit button, edit, then Save
+To edit time (in minutes) assigned to a task: hit the Edit button, edit, then Save
 
 To delete a task: select it in the dropdown and hit the Delete key
 

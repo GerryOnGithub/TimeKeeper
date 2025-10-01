@@ -57,11 +57,17 @@ def save_tasks_to_disk(where):
 
 # Backup tasks to backup YAML file
 def backup_tasks():
-    filename = f"backup_{datetime.now().strftime('%A').lower()}.yaml"
-    with open(filename, 'w') as file:
+    backup_dir = "backups"
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    day_of_week = datetime.now().strftime('%A').lower()
+
+    yaml_filepath = os.path.join(backup_dir, f"{day_of_week}.yaml")
+    with open(yaml_filepath, 'w') as file:
         yaml.dump(_tasks, file)
-    filename = f"backup_{datetime.now().strftime('%A').lower()}.xlsx"
-    continue_export_to_excel(filename, False)
+
+    xlsx_filepath = os.path.join(backup_dir, f"{day_of_week}.xlsx")
+    continue_export_to_excel(xlsx_filepath, False)
     print(f"tasks back up ran")
 
 def on_closing():
@@ -221,8 +227,10 @@ def summarize():
     return summary
 
 def maybe_export_to_excel():
-    xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
-    if xlsx_file:
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    xlsx_file = f"timekeeper-{timestamp}.xlsx"
+    # xlsx_file = filedialog.asksaveasfilename(defaultextension=".xlsx", filetypes=[("Excel files", "*.xlsx")])
+    if xlsx_file: # if is legacy for when user had option to not pick a filename
         continue_export_to_excel(xlsx_file, True)
 
 def continue_export_to_excel(xlsx_file, launch):
@@ -358,7 +366,8 @@ root.geometry("216x92")
 root.minsize(216, 27)
 root.maxsize(460, 90)
 root.attributes("-topmost", True)
-root.configure(bg="#AAAADE") # rgb
+# root.configure(bg="#AAAADE") # rgb
+root.configure(bg="#ffdbfe")
 
 root.bind('<Map>', disable_maximize)
 
